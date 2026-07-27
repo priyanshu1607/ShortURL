@@ -1,0 +1,70 @@
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import RedirectResponse
+import secrets
+from constants import HOST
+from database.models import URL 
+from database.database import URL_collection
+from redis_client import setInRedis, getFromRedis
+app = FastAPI()
+import secrets
+import string
+
+ALPHABET = string.ascii_letters + string.digits
+
+def generate_unique_slug(length=6):
+    return "".join(secrets.choice(ALPHABET) for _ in range(length))
+
+@app.get("/")
+async def apiList():
+    return {"message": "Hello World"}
+
+@app.post('/url')
+async def shortenURL(item:dict):
+    try: 
+        short_slug = item.get('alies') or generate_unique_slug()
+        tinyurl = await URL_collection.find_one({'Longurl': item['url']})
+        if tinyurl:
+            return (tinyurl['shortURL']) 
+        url_dict = URL(
+                    Longurl = item['url'], 
+                    shortURL = f'{HOST}/{short_slug}'
+        ) 
+        database_compatibale = url_dict.model_dump(mode="json")
+        setInRedis(database_compatibale['shortURL'],database_compatibale['Longurl'])
+        await URL_collection.insert_one(database_compatibale)
+        return {f"{HOST}/{short_slug}"}
+    except Exception as e:
+            print(e)
+            return Response("Error occured", 502)
+    
+    
+
+@app.get('/{URL}')
+async def getorignalURL(URL: Request):
+    try:
+        host = URL.headers["host"]  
+        URL = str(host + URL.url.path)
+        getFromRedis(str(HOST + URL.url.path))
+        
+        urlcollection = await URL_collection.find_one({'shortURL': URL})
+        if urlcollection:
+            await URL_collection.update_one({'_id': urlcollection['_id']}, {"$set": {"click": urlcollection["click"] + 1}} )
+            return RedirectResponse(urlcollection['Longurl'], status_code=302)
+        return Response("URL not found in db", 404)
+    except Exception as e:
+        return Response("Error occured", 502)
+        
+    
+
+@app.delete('/deleteURL')
+async def deleteSHortURL(item:dict):
+    try:
+        tinyurl = await URL_collection.find_one({'Longurl': item['url']})
+        if tinyurl:
+            await URL_collection.delete_one({"_id": tinyurl['_id']})
+            return Response('URL deleted')
+        return Response('URL not deleted', 404)
+    except Exception as e:
+        return Response('URL not deleted', 502)
+    
+    
