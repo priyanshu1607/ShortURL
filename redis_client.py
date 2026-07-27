@@ -7,5 +7,5 @@ def setInRedis(key, value):
     redis_client.set(key, value, ex=3600)
     
 def getFromRedis(key):
-    redis_client.get(key )
+    return redis_client.get(key ).decode("UTF-8")
     

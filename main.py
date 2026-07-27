@@ -26,8 +26,8 @@ async def shortenURL(item:dict):
         if tinyurl:
             return (tinyurl['shortURL']) 
         url_dict = URL(
-                    Longurl = item['url'], 
-                    shortURL = f'{HOST}/{short_slug}'
+                    Longurl =  item['url'], 
+                    shortURL =  'http://' +f'{HOST}/{short_slug}'
         ) 
         database_compatibale = url_dict.model_dump(mode="json")
         setInRedis(database_compatibale['shortURL'],database_compatibale['Longurl'])
@@ -42,17 +42,21 @@ async def shortenURL(item:dict):
 @app.get('/{URL}')
 async def getorignalURL(URL: Request):
     try:
-        host = URL.headers["host"]  
-        URL = str(host + URL.url.path)
-        getFromRedis(str(HOST + URL.url.path))
-        
-        urlcollection = await URL_collection.find_one({'shortURL': URL})
+        # host = URL.headers["host"]  
+        url = str(URL.url)
+        urlcollection = getFromRedis(url)
         if urlcollection:
-            await URL_collection.update_one({'_id': urlcollection['_id']}, {"$set": {"click": urlcollection["click"] + 1}} )
+            await URL_collection.update_one({'shortURL': url}, {"$inc": {"click": 1}} )
+            
+            return RedirectResponse(urlcollection, status_code=302)
+        
+        urlcollection = await URL_collection.find_one({'shortURL': url})
+        if urlcollection:
+            await URL_collection.update_one({'_id': urlcollection['_id']}, {"$inc": {"click": 1}} )
             return RedirectResponse(urlcollection['Longurl'], status_code=302)
-        return Response("URL not found in db", 404)
+        return Response("URL not found in db", status_code=404)
     except Exception as e:
-        return Response("Error occured", 502)
+        return Response("Error occured", status_code=502)
         
     
 
