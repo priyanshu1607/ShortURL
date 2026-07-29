@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Request, Response
+app = FastAPI()
 from fastapi.responses import RedirectResponse
 import secrets
 from constants import HOST
 from database.models import URL 
+from datetime import datetime 
 from database.database import URL_collection
 from redis_client import setInRedis, getFromRedis
-app = FastAPI()
-import secrets
+
 import string
 
 ALPHABET = string.ascii_letters + string.digits
@@ -26,19 +27,23 @@ async def shortenURL(item:dict):
         if tinyurl:
             return (tinyurl['shortURL']) 
         url_dict = URL(
+                    expires_at = datetime.strptime(item['Expires_at'], "%Y-%m-%d %H:%M:%S"),
                     Longurl =  item['url'], 
                     shortURL =  'http://' +f'{HOST}/{short_slug}'
         ) 
-        database_compatibale = url_dict.model_dump(mode="json")
-        setInRedis(database_compatibale['shortURL'],database_compatibale['Longurl'])
-        await URL_collection.insert_one(database_compatibale)
+        result = url_dict.model_dump(mode="json")
+        setInRedis(result['shortURL'],result['Longurl'])
+        await URL_collection.insert_one(result)
         return {f"{HOST}/{short_slug}"}
     except Exception as e:
             print(e)
             return Response("Error occured", 502)
     
     
+async def analytic():
+    pass
 
+ 
 @app.get('/{URL}')
 async def getorignalURL(URL: Request):
     try:
@@ -47,12 +52,18 @@ async def getorignalURL(URL: Request):
         urlcollection = getFromRedis(url)
         if urlcollection:
             await URL_collection.update_one({'shortURL': url}, {"$inc": {"click": 1}} )
+            analytic()
             
             return RedirectResponse(urlcollection, status_code=302)
         
         urlcollection = await URL_collection.find_one({'shortURL': url})
+        expires_at = datetime.fromisoformat(urlcollection["expires_at"])
+        if expires_at < datetime.now():
+            return Response("URL Expierd", status_code=410)
+            
         if urlcollection:
             await URL_collection.update_one({'_id': urlcollection['_id']}, {"$inc": {"click": 1}} )
+            analytic()
             return RedirectResponse(urlcollection['Longurl'], status_code=302)
         return Response("URL not found in db", status_code=404)
     except Exception as e:
