@@ -1,14 +1,18 @@
 import redis
 import json
+from constants import RedisHOST
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
+def getRedisClient(db):
+    return redis.Redis(host=RedisHOST, port=6379, db=db)
+    
 def setInRedis(key, value):
-    redis_client.set(key, value, ex=3600)
+    getRedisClient(0).set(key, value, ex=3600)
     
 def getFromRedis(key):
-    redis_value = redis_client.get(key)
+    redis_value = getRedisClient(0).get(key)
     if redis_value:
-        redis_value = redis_client.get(key)
+        redis_value = redis_value.decode("UTF-8")
     return redis_value
-    
+def rateLimiter():
+    return getRedisClient(1)
