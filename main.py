@@ -7,6 +7,7 @@ from database.models import URL
 from datetime import datetime 
 from database.database import URL_collection
 from redis_client import setInRedis, getFromRedis
+from rate_limiter import Limiter
 
 import string
 
@@ -82,4 +83,6 @@ async def deleteSHortURL(item:dict):
     except Exception as e:
         return Response('URL not deleted', 502)
     
-    
+@app.get('/Healt')
+async def healthcheck():
+    pass
