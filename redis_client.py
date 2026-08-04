@@ -5,12 +5,13 @@ from constants import RedisHOST
 
 def getRedisClient(db):
     return redis.Redis(host=RedisHOST, port=6379, db=db)
-    
+
+redisClient = getRedisClient(0)
 def setInRedis(key, value):
-    getRedisClient(0).set(key, value, ex=3600)
+    redisClient.set(key, value, ex=3600)
     
 def getFromRedis(key):
-    redis_value = getRedisClient(0).get(key)
+    redis_value = redisClient.get(key)
     if redis_value:
         redis_value = redis_value.decode("UTF-8")
     return redis_value

@@ -19,4 +19,4 @@ class URL(BaseModel):
     Longurl: HttpUrl
     alies : Optional[str] = None
     click : int = 0
-    expires_at: datetime = None
+    expires_at: Optional[datetime] = None

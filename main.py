@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 app = FastAPI()
 from fastapi.responses import RedirectResponse
 import secrets
@@ -7,7 +7,7 @@ from database.models import URL
 from datetime import datetime 
 from database.database import URL_collection
 from redis_client import setInRedis, getFromRedis
-from rate_limiter import Limiter
+from rate_limiter import Rate_limiter
 
 import string
 
@@ -20,15 +20,19 @@ def generate_unique_slug(length=6):
 async def apiList():
     return {"message": "Hello World"}
 
-@app.post('/url')
-async def shortenURL(item:dict):
+@app.post(
+        '/url',
+          dependencies=[Depends(Rate_limiter(bucket="create_url", max_requests = 10, time_frame= 60))]
+        )
+async def shortenURL(item:dict, request: Request):
     try: 
         short_slug = item.get('alies') or generate_unique_slug()
         tinyurl = await URL_collection.find_one({'Longurl': item['url']})
         if tinyurl:
             return (tinyurl['shortURL']) 
+        expires_at = datetime.strptime(item['Expires_at'], "%Y-%m-%d %H:%M:%S") if item.get('Expires_at') else None
         url_dict = URL(
-                    expires_at = datetime.strptime(item['Expires_at'], "%Y-%m-%d %H:%M:%S"),
+                    expires_at = expires_at,
                     Longurl =  item['url'], 
                     shortURL =  'http://' +f'{HOST}/{short_slug}'
         ) 
@@ -45,7 +49,10 @@ async def analytic():
     pass
 
  
-@app.get('/{URL}')
+@app.get(
+        '/{URL}', 
+          dependencies=[Depends(Rate_limiter(bucket="redirect_url", max_requests = 10, time_frame= 60))]
+         )
 async def getorignalURL(URL: Request):
     try:
         # host = URL.headers["host"]  
@@ -53,18 +60,20 @@ async def getorignalURL(URL: Request):
         urlcollection = getFromRedis(url)
         if urlcollection:
             await URL_collection.update_one({'shortURL': url}, {"$inc": {"click": 1}} )
-            analytic()
+            # analytic()
             
             return RedirectResponse(urlcollection, status_code=302)
         
         urlcollection = await URL_collection.find_one({'shortURL': url})
-        expires_at = datetime.fromisoformat(urlcollection["expires_at"])
-        if expires_at < datetime.now():
-            return Response("URL Expierd", status_code=410)
+        
+        if urlcollection["expires_at"]:
+            expires_at = datetime.fromisoformat(urlcollection["expires_at"])
+            if expires_at < datetime.now():
+                return Response("URL Expierd", status_code=410)
             
         if urlcollection:
             await URL_collection.update_one({'_id': urlcollection['_id']}, {"$inc": {"click": 1}} )
-            analytic()
+            # analytic()
             return RedirectResponse(urlcollection['Longurl'], status_code=302)
         return Response("URL not found in db", status_code=404)
     except Exception as e:
@@ -73,7 +82,7 @@ async def getorignalURL(URL: Request):
     
 
 @app.delete('/deleteURL')
-async def deleteSHortURL(item:dict):
+async def deleteSHortURL(item:dict, request: Request):
     try:
         tinyurl = await URL_collection.find_one({'Longurl': item['url']})
         if tinyurl:
