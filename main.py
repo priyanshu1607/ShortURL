@@ -92,6 +92,9 @@ async def deleteSHortURL(item:dict, request: Request):
     except Exception as e:
         return Response('URL not deleted', 502)
     
-@app.get('/Healt')
+@app.get('/health')
 async def healthcheck():
-    pass
+    try:
+        return Response('status: Running', 200)
+    except Exception as e:
+        return Response('Error encounted', 502)
