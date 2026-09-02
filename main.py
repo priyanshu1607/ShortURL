@@ -7,7 +7,7 @@ from database.models import URL
 from datetime import datetime 
 from database.database import URL_collection
 from redis_client import setInRedis, getFromRedis
-from rate_limiter import Rate_limiter
+from pymongo.errors import DuplicateKeyError
 
 import string
 
@@ -16,14 +16,17 @@ ALPHABET = string.ascii_letters + string.digits
 def generate_unique_slug(length=6):
     return "".join(secrets.choice(ALPHABET) for _ in range(length))
 
+
+async def init_db():
+    await URL_collection.create_index(
+        "shortURL",
+        unique=True
+    )
 @app.get("/")
 async def apiList():
     return {"message": "Hello World"}
 
-@app.post(
-        '/url',
-          dependencies=[Depends(Rate_limiter(bucket="create_url", max_requests = 10, time_frame= 60))]
-        )
+@app.post('/url')
 async def shortenURL(item:dict, request: Request):
     try: 
         short_slug = item.get('alies') or generate_unique_slug()
@@ -40,6 +43,9 @@ async def shortenURL(item:dict, request: Request):
         setInRedis(result['shortURL'],result['Longurl'])
         await URL_collection.insert_one(result)
         return {f"{HOST}/{short_slug}"}
+    except DuplicateKeyError:
+         pass
+        
     except Exception as e:
             print(e)
             return Response("Error occured", 502)
@@ -49,10 +55,7 @@ async def analytic():
     pass
 
  
-@app.get(
-        '/{URL}', 
-          dependencies=[Depends(Rate_limiter(bucket="redirect_url", max_requests = 10, time_frame= 60))]
-         )
+@app.get('/{URL}')
 async def getorignalURL(URL: Request):
     try:
         # host = URL.headers["host"]  

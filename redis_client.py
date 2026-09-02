@@ -15,5 +15,3 @@ def getFromRedis(key):
     if redis_value:
         redis_value = redis_value.decode("UTF-8")
     return redis_value
-def rateLimiter():
-    return getRedisClient(1)
