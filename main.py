@@ -1,7 +1,21 @@
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    # allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+import time
+
 from fastapi.responses import RedirectResponse
-import secrets
 from constants import HOST
 from database.models import URL 
 from datetime import datetime 
@@ -13,8 +27,19 @@ import string
 
 ALPHABET = string.ascii_letters + string.digits
 
-def generate_unique_slug(length=6):
-    return "".join(secrets.choice(ALPHABET) for _ in range(length))
+    
+@app.get('/health')
+async def healthcheck():
+    try:
+        return Response('server is Running', 200)
+    except Exception as e:
+        print(e)
+        return Response('Error encounted', 502)
+
+def generate_unique_slug():
+    current_time = time.time()  
+    ms_timestamp = int(current_time * 1000)
+    return hex(ms_timestamp)[2:]
 
 
 async def init_db():
@@ -22,17 +47,12 @@ async def init_db():
         "shortURL",
         unique=True
     )
-@app.get("/")
-async def apiList():
-    return {"message": "Hello World"}
 
 @app.post('/url')
 async def shortenURL(item:dict, request: Request):
     try: 
         short_slug = item.get('alies') or generate_unique_slug()
-        tinyurl = await URL_collection.find_one({'Longurl': item['url']})
-        if tinyurl:
-            return (tinyurl['shortURL']) 
+        # tinyurl = await URL_collection.find_one({'Longurl': item['url']})
         expires_at = datetime.strptime(item['Expires_at'], "%Y-%m-%d %H:%M:%S") if item.get('Expires_at') else None
         url_dict = URL(
                     expires_at = expires_at,
@@ -94,10 +114,3 @@ async def deleteSHortURL(item:dict, request: Request):
         return Response('URL not deleted', 404)
     except Exception as e:
         return Response('URL not deleted', 502)
-    
-@app.get('/health')
-async def healthcheck():
-    try:
-        return Response('status: Running', 200)
-    except Exception as e:
-        return Response('Error encounted', 502)
