@@ -1,2 +1,2 @@
 HOST  =  'localhost:8000'
-RedisHOST = 'localhost'
+RedisHOST = 'redis://redis:6379'
