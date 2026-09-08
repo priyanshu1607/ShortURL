@@ -1,8 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
+from constants import MongoClient
 
-MONGO_URL = "mongodb://localhost:27017"
+MONGO_URL = MongoClient
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["URL"]
 
-users_collection = db["users"]
 URL_collection = db["URL"]

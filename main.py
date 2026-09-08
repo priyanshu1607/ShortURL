@@ -100,13 +100,13 @@ async def getorignalURL(URL: Request):
         
     
 
-@app.delete('/deleteURL')
-async def deleteSHortURL(item:dict, request: Request):
-    try:
-        tinyurl = await URL_collection.find_one({'Longurl': item['url']})
-        if tinyurl:
-            await URL_collection.delete_one({"_id": tinyurl['_id']})
-            return Response('URL deleted')
-        return Response('URL not deleted', 404)
-    except Exception as e:
-        return Response('URL not deleted', 502)
+# @app.delete('/deleteURL')
+# async def deleteSHortURL(item:dict, request: Request):
+#     try:
+#         tinyurl = await URL_collection.find_one({'Longurl': item['url']})
+#         if tinyurl:
+#             await URL_collection.delete_one({"_id": tinyurl['_id']})
+#             return Response('URL deleted')
+#         return Response('URL not deleted', 404)
+#     except Exception as e:
+#         return Response('URL not deleted', 502)

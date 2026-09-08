@@ -1,2 +1,5 @@
+import os
+
 HOST  =  'localhost:8000'
-RedisHOST = 'redis://redis:6379'
+RedisHOST = os.getenv("REDIS_URL")
+MongoClient = os.getenv("MONGO_URL")
