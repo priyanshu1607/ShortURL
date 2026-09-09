@@ -9,6 +9,7 @@ services:
       - redis
     environment:
       MONGO_URL: mongodb://mongo:27017
+      Secret_Key: "xyz"
       REDIS_URL: redis://redis:6379
 
   mongo:
