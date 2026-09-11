@@ -1,0 +1,10 @@
+
+**/__pycache__
+**/*.pyc
+**/.gitignore
+
+**/node_modules
+**/.venv
+**/__pycache__
+**/dist
+.git

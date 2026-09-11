@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+router = APIRouter(prefix="/api/v1")
 
 
 app.add_middleware(
@@ -45,7 +46,7 @@ async def init_db():
         unique=True
     )
 
-@app.post('/url')
+@router.post('/urls')
 async def shortenURL(item:dict, request: Request):
     try: 
         short_slug = item.get('alies') or generate_unique_slug()
@@ -71,7 +72,10 @@ async def shortenURL(item:dict, request: Request):
 async def analytic():
     pass
 
- 
+
+app.include_router(router)
+
+
 @app.get('/{URL}')
 async def getorignalURL(URL: Request):
     try:
