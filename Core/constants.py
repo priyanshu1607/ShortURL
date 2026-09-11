@@ -1,6 +1,6 @@
 import os
 
-HOST  =  'localhost:8000'
+HOST  =  'localhost'
 RedisHOST = os.getenv("REDIS_URL")
 MongoClient = os.getenv("MONGO_URL")
 secreat_key = os.getenv("Secret_Key")
