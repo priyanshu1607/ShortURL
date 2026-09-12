@@ -40,3 +40,6 @@ Confirm everything is up:
 ## Rate limiting
 
 The gateway (`nginx/URLshortner.conf`) limits requests to 10 requests/second per client IP, with a burst allowance of 20. 
+
+# API
+author.p12 is postman API guilde if you want to import
