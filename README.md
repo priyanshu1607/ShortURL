@@ -4,7 +4,6 @@
 Tiny URL is a production‑ready URL shortener built with **FastAPI**, **MongoDB**, **Redis**, and a **React (Vite)** frontend. An **Nginx** gateway sits in front of the services handling routing, static asset serving, and basic rate‑limiting. All components are containerised and orchestrated with **Docker Compose**, making the whole stack easy to spin up on any machine that has Docker.
 
 ---
-
 ## Tech Stack
 | Layer | Technology |
 |-------|------------|
