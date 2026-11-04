@@ -4,7 +4,6 @@ from constants import RedisHOST
 
 
 def getRedisClient(db):
-    # print("RedisHOST", redis.Redis(host=RedisHOST, db=db))
     return redis.Redis.from_url(url=RedisHOST, db=db)
 
 redisClient = getRedisClient(0)
