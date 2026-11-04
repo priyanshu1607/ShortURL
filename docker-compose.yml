@@ -3,7 +3,8 @@ services:
     build: 
       context: ./Core
     container_name: tinyurl_api
-
+    ports:
+      - "8000:8000"
     depends_on:
       - mongo
       - redis
